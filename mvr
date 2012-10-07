@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+
+require 'trollop'
+require 'fileutils'
+
+ROOT = File.dirname(File.realpath(__FILE__))
+Dir[File.join(ROOT, 'lib', '*.rb')].each{ |f| require f }
+
+p = Trollop::Parser.new do
+  version "1.0.0"
+  banner <<-end
+mvr [-rdvc] <source> <target>
+
+Move files by regular expressions
+  end
+  opt :recursive, 'Recurse into folders'
+  opt :dryrun, "Don't move files"
+  opt :verbose, "Show me what's being moved"
+  opt :confirm, 'Confirm movements before running'
+end
+
+opts = Trollop::with_standard_exception_handling p do
+  rv = p.parse(ARGV)
+  raise Trollop::HelpNeeded unless ARGV.size == 2
+  rv
+end
+
+regexp = MVRegexp.new *ARGV
+dir_map = (opts[:recursive] ? '**/*' : '*')
+movements = regexp[Dir[dir_map]]
+
+# Confirmation required
+if opts[:confirm]
+  puts "Proposed changes:"
+
+  longest_original = movements.map{ |a,b| a.size }.max
+  puts movements.map{ |a,b| "  #{a.ljust(longest_original)} -> #{b}" }
+
+  puts "Confirm? [y/n]"
+
+  if $stdin.getc.downcase == 'y'
+    puts "Confirmed"
+    movements.each{ |a,b| FileUtils::mv a, b }
+
+  else
+    puts "Cancelled"
+  end
+
+# Confirmation not required
+else
+  movements.each do |from, to|
+    puts "#{from} -> #{to}" if opts[:verbose]
+    FileUtils::mv(from, to) unless opts[:dryrun]
+  end
+end
