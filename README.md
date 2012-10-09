@@ -28,7 +28,9 @@ A word of warning - `mvr 'foo' 'bar'` will only match files named `foo`, not fil
 
 -v
 : Verbose mode. Will inform you of every file change.
+
 -d
 : Dryrun. Will not actually move any files.
+
 -c
 : Confirm. Will show you the results of your action and seek confirmation before continuing.
